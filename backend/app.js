@@ -1,5 +1,5 @@
 const express = require('express');
-const { initDatabase } = require('./config/database');
+const { sequelize, initDatabase } = require('./config/db');
 const { PORT } = require('./config/config');
 
 // Import routes

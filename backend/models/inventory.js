@@ -1,25 +1,29 @@
-const { Model, DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const { DataTypes } = require('sequelize');
 
-class Inventory extends Model {
-  static associate(models) {
-    this.belongsTo(models.Product);
-  }
-}
+module.exports = (sequelize) => {
+  const Inventory = sequelize.define('Inventory', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    lowStockThreshold: {
+      type: DataTypes.INTEGER,
+      defaultValue: 10
+    }
+  }, {
+    tableName: 'inventories',
+    timestamps: true
+  });
 
-Inventory.init({
-  quantity: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0
-  },
-  lowStockThreshold: {
-    type: DataTypes.INTEGER,
-    defaultValue: 10
-  }
-}, {
-  sequelize,
-  modelName: 'Inventory'
-});
+  Inventory.associate = (models) => {
+    Inventory.belongsTo(models.Product);
+  };
 
-module.exports = Inventory;
+  return Inventory;
+};
