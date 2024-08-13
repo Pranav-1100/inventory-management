@@ -1,22 +1,18 @@
-const { User, Token } = require('../models');
+const { User } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 class UserService {
   static async createUser(userData) {
+    // Check if user already exists
     const existingUser = await User.findOne({ where: { email: userData.email } });
     if (existingUser) {
       throw new Error('User with this email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const user = await User.create({ ...userData, password: hashedPassword });
-    const token = await this.generateOrRetrieveToken(user.id);
-    
-    return { 
-      token, 
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
-    };
+    const user = await User.create(userData);
+    const token = this.generateToken(user.id);
+    return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
   }
 
   static async loginUser({ email, password }) {
@@ -24,12 +20,8 @@ class UserService {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new Error('Invalid credentials');
     }
-    const token = await this.generateOrRetrieveToken(user.id);
-    
-    return { 
-      token, 
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
-    };
+    const token = this.generateToken(user.id);
+    return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
   }
 
   static async getUserById(id) {
@@ -38,38 +30,11 @@ class UserService {
     return { id: user.id, name: user.name, email: user.email, role: user.role };
   }
 
-  static async generateOrRetrieveToken(userId) {
-    let tokenRecord = await Token.findOne({ where: { userId } });
-    
-    if (tokenRecord && this.isTokenValid(tokenRecord.token)) {
-      return tokenRecord.token;
-    }
-
-    const token = this.generateToken(userId);
-    
-    if (tokenRecord) {
-      await tokenRecord.update({ token });
-    } else {
-      await Token.create({ userId, token });
-    }
-
-    return token;
-  }
-
   static generateToken(userId) {
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not set in environment variables');
     }
     return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '1d' });
-  }
-
-  static isTokenValid(token) {
-    try {
-      jwt.verify(token, process.env.JWT_SECRET);
-      return true;
-    } catch (error) {
-      return false;
-    }
   }
 }
 

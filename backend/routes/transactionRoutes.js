@@ -3,12 +3,13 @@ const TransactionService = require('../services/transactionService');
 const auth = require('../middlewares/auth');
 const router = express.Router();
 
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const transaction = await TransactionService.createTransaction(req.body);
     res.status(201).json(transaction);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error creating transaction:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -6,6 +6,8 @@ const rateLimit = require('express-rate-limit');
 const { sequelize, initDatabase } = require('./config/db');
 const { PORT, NODE_ENV } = require('./config/config');
 const errorHandler = require('./middlewares/errorHandler');
+const models = require('./models');
+console.log('Available models:', Object.keys(models));
 
 // Import routes
 const userRoutes = require('./routes/userRoutes');
@@ -18,6 +20,7 @@ const reportRoutes = require('./routes/reportRoute');
 const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
+
 
 // Check for JWT_SECRET
 if (!process.env.JWT_SECRET) {
