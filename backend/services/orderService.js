@@ -62,6 +62,59 @@ class OrderService {
     if (!order) throw new Error('Order not found');
     return await order.update({ status });
   }
+  static async processOrder(orderId) {
+    const t = await sequelize.transaction();
+
+    try {
+      const order = await Order.findByPk(orderId, {
+        include: [{ model: OrderItem, include: Product }],
+        transaction: t
+      });
+
+      if (!order) throw new Error('Order not found');
+      if (order.status !== 'pending') throw new Error('Order already processed');
+
+      for (let item of order.OrderItems) {
+        await this.allocateInventory(item.Product.id, item.quantity, t);
+      }
+
+      await order.update({ status: 'processed' }, { transaction: t });
+
+      await t.commit();
+      return order;
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
+  }
+
+  static async allocateInventory(productId, quantity, transaction) {
+    let remainingQuantity = quantity;
+    const batches = await InventoryBatch.findAll({
+      where: { productId, quantity: { [Op.gt]: 0 } },
+      order: [['expiryDate', 'ASC']],
+      transaction
+    });
+
+    for (let batch of batches) {
+      if (remainingQuantity <= 0) break;
+
+      const allocatedQuantity = Math.min(batch.quantity, remainingQuantity);
+      await batch.decrement('quantity', { by: allocatedQuantity, transaction });
+      remainingQuantity -= allocatedQuantity;
+    }
+
+    if (remainingQuantity > 0) {
+      throw new Error(`Insufficient inventory for product ${productId}`);
+    }
+
+    await Inventory.decrement('quantity', {
+      by: quantity,
+      where: { productId },
+      transaction
+    });
+  }
 }
+
 
 module.exports = OrderService;

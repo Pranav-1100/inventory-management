@@ -1,9 +1,9 @@
 const express = require('express');
 const OrderService = require('../services/orderService');
-const auth = require('../middlewares/auth');
+const authMiddleware = require('../middlewares/auth');
 const router = express.Router();
 
-router.post('/', auth, async (req, res) => {
+router.post('/', authMiddleware('create:order'), async (req, res) => {
   try {
     const order = await OrderService.createOrder(req.user.id, req.body);
     res.status(201).json(order);
@@ -12,7 +12,7 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-router.get('/', auth, async (req, res) => {
+router.get('/', authMiddleware('read:orders'), async (req, res) => {
   try {
     const orders = await OrderService.getAllOrders(req.user.id);
     res.json(orders);
@@ -21,7 +21,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', authMiddleware('read:orders'), async (req, res) => {
   try {
     const order = await OrderService.getOrderById(req.params.id, req.user.id);
     res.json(order);
@@ -30,7 +30,7 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-router.put('/:id/status', auth, async (req, res) => {
+router.put('/:id/status', authMiddleware('update:order'), async (req, res) => {
   try {
     const { status } = req.body;
     const order = await OrderService.updateOrderStatus(req.params.id, status);

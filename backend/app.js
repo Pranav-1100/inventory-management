@@ -9,6 +9,7 @@ const productRoutes = require('./routes/productRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');// const inventoryRoutes = require('./routes/inventory.routes');
 const orderRoutes = require('./routes/orderRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 const app = express();
 if (!process.env.JWT_SECRET) {
