@@ -6,7 +6,7 @@ const { PORT } = require('./config/config');
 // Import routes
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
-// const inventoryRoutes = require('./routes/inventory.routes');
+const inventoryRoutes = require('./routes/inventoryRoutes');// const inventoryRoutes = require('./routes/inventory.routes');
 // const orderRoutes = require('./routes/order.routes');
 // const serviceRoutes = require('./routes/service.routes');
 // const transactionRoutes = require('./routes/transaction.routes');
@@ -23,7 +23,7 @@ app.use(express.json());
 // // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
-// app.use('/api/inventory', inventoryRoutes);
+app.use('/api/inventory', inventoryRoutes);
 // app.use('/api/orders', orderRoutes);
 // app.use('/api/services', serviceRoutes);
 // app.use('/api/transactions', transactionRoutes);
