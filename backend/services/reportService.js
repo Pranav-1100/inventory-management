@@ -1,4 +1,4 @@
-const { Order, Product, Transaction, sequelize } = require('../models');
+const { Order, Product, OrderItem, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 class ReportService {

@@ -25,6 +25,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       unique: true
     },
+    sku: {
+        type: DataTypes.STRING,
+        unique: true
+      },
     imageUrl: DataTypes.STRING
   }, {
     tableName: 'products',

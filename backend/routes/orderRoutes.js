@@ -1,43 +1,75 @@
-const express = require('express');
-const OrderService = require('../services/orderService');
-const authMiddleware = require('../middlewares/auth');
-const router = express.Router();
+const { Order, OrderItem, Product, Inventory, sequelize } = require('../models');
 
-router.post('/', authMiddleware('create:order'), async (req, res) => {
-  try {
-    const order = await OrderService.createOrder(req.user.id, req.body);
-    res.status(201).json(order);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+class OrderService {
+  static async createOrder(userId, orderData) {
+    const t = await sequelize.transaction();
+
+    try {
+      const order = await Order.create({
+        userId,
+        status: 'pending',
+        total: 0
+      }, { transaction: t });
+
+      let total = 0;
+      for (let item of orderData.items) {
+        const product = await Product.findByPk(item.productId, { transaction: t });
+        if (!product) throw new Error(`Product not found: ${item.productId}`);
+
+        const inventory = await Inventory.findOne({ 
+          where: { productId: item.productId },
+          transaction: t
+        });
+        if (inventory.quantity < item.quantity) {
+          throw new Error(`Insufficient inventory for product: ${product.name}`);
+        }
+
+        await OrderItem.create({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: product.price
+        }, { transaction: t });
+
+        await inventory.decrement('quantity', { 
+          by: item.quantity, 
+          transaction: t 
+        });
+
+        total += product.price * item.quantity;
+      }
+
+      await order.update({ total, status: 'completed' }, { transaction: t });
+
+      await t.commit();
+      return order;
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
   }
-});
 
-router.get('/', authMiddleware('read:orders'), async (req, res) => {
-  try {
-    const orders = await OrderService.getAllOrders(req.user.id);
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  static async getAllOrders(userId) {
+    return await Order.findAll({
+      where: { userId },
+      include: [{ model: OrderItem, include: Product }]
+    });
   }
-});
 
-router.get('/:id', authMiddleware('read:orders'), async (req, res) => {
-  try {
-    const order = await OrderService.getOrderById(req.params.id, req.user.id);
-    res.json(order);
-  } catch (error) {
-    res.status(404).json({ error: error.message });
+  static async getOrderById(id, userId) {
+    const order = await Order.findOne({
+      where: { id, userId },
+      include: [{ model: OrderItem, include: Product }]
+    });
+    if (!order) throw new Error('Order not found');
+    return order;
   }
-});
 
-router.put('/:id/status', authMiddleware('update:order'), async (req, res) => {
-  try {
-    const { status } = req.body;
-    const order = await OrderService.updateOrderStatus(req.params.id, status);
-    res.json(order);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+  static async updateOrderStatus(id, status) {
+    const order = await Order.findByPk(id);
+    if (!order) throw new Error('Order not found');
+    return await order.update({ status });
   }
-});
+}
 
-module.exports = router;
+module.exports = OrderService;

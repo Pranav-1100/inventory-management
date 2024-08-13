@@ -1,34 +1,65 @@
-const express = require('express');
-const InventoryService = require('../services/inventoryService');
-const auth = require('../middlewares/auth');
-const router = express.Router();
+const { Inventory, Product, sequelize } = require('../models');
+const { Op } = require('sequelize');
 
-router.post('/adjust/:productId', auth, async (req, res) => {
-  try {
-    const { quantity } = req.body;
-    const inventory = await InventoryService.adjustInventory(req.params.productId, quantity);
-    res.json(inventory);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+class InventoryService {
+  static async adjustInventory(productId, quantityChange) {
+    const t = await sequelize.transaction();
+
+    try {
+      const inventory = await Inventory.findOne({ 
+        where: { productId },
+        transaction: t
+      });
+
+      if (!inventory) throw new Error('Inventory not found for this product');
+
+      const newQuantity = inventory.quantity + quantityChange;
+      if (newQuantity < 0) throw new Error('Insufficient inventory');
+
+      await inventory.update({ quantity: newQuantity }, { transaction: t });
+
+      await t.commit();
+      return inventory;
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
   }
-});
 
-router.get('/:productId', async (req, res) => {
-  try {
-    const inventory = await InventoryService.getInventoryForProduct(req.params.productId);
-    res.json(inventory);
-  } catch (error) {
-    res.status(404).json({ error: error.message });
+  static async getInventoryForProduct(productId) {
+    const inventory = await Inventory.findOne({ 
+      where: { productId },
+      include: Product
+    });
+    if (!inventory) throw new Error('Inventory not found for this product');
+    return inventory;
   }
-});
 
-router.get('/low-stock', auth, async (req, res) => {
-  try {
-    const lowStockItems = await InventoryService.getLowStockItems();
-    res.json(lowStockItems);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  static async getLowStockItems() {
+    return await Inventory.findAll({
+      where: {
+        quantity: {
+          [Op.lt]: sequelize.col('lowStockThreshold')
+        }
+      },
+      include: Product
+    });
   }
-});
 
-module.exports = router;
+  static async getInventoryValuation() {
+    return await Product.findAll({
+      attributes: [
+        'id',
+        'name',
+        'cost',
+        [sequelize.literal('Inventory.quantity * Product.cost'), 'totalValue']
+      ],
+      include: [{
+        model: Inventory,
+        attributes: ['quantity']
+      }]
+    });
+  }
+}
+
+module.exports = InventoryService;
