@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/config');
 const AuthService = require('../services/authService');
+const { User } = require('../models');
 
 const authMiddleware = (requiredPermission) => {
   return async (req, res, next) => {
@@ -12,10 +13,19 @@ const authMiddleware = (requiredPermission) => {
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      req.user = decoded;
+      
+      // Fetch the user from the database
+      const user = await User.findByPk(decoded.id);
+      
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+
+      // Attach user to request object
+      req.user = user;
 
       if (requiredPermission) {
-        const hasPermission = await AuthService.checkPermission(req.user.id, requiredPermission);
+        const hasPermission = await AuthService.checkPermission(user.id, requiredPermission);
         if (!hasPermission) {
           return res.status(403).json({ message: 'Insufficient permissions' });
         }
@@ -23,8 +33,13 @@ const authMiddleware = (requiredPermission) => {
 
       next();
     } catch (error) {
-      console.error('Error verifying token:', error);
-      return res.status(401).json({ message: 'Invalid token' });
+      console.error('Error in auth middleware:', error);
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: 'Invalid token' });
+      } else if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expired' });
+      }
+      return res.status(500).json({ message: 'Internal server error' });
     }
   };
 };

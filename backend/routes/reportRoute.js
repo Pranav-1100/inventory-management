@@ -31,5 +31,22 @@ router.get('/profit-margin', authMiddleware('view:reports'), async (req, res) =>
     res.status(500).json({ error: error.message });
   }
 });
+router.get('/sales', authMiddleware('view:reports'), async (req, res, next) => {
+    try {
+        const report = await ReportService.getSalesReport(req.query.startDate, req.query.endDate);
+        res.json(report);
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/inventory', authMiddleware('view:reports'), async (req, res, next) => {
+    try {
+        const report = await ReportService.getInventoryReport();
+        res.json(report);
+    } catch (error) {
+        next(error);
+    }
+});
 
 module.exports = router;
