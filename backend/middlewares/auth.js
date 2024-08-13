@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/config');
+const AuthService = require('../services/authService');
 
-const authMiddleware = (requiredRole) => {
-  return (req, res, next) => {
+const authMiddleware = (requiredPermission) => {
+  return async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -13,8 +14,11 @@ const authMiddleware = (requiredRole) => {
       const decoded = jwt.verify(token, JWT_SECRET);
       req.user = decoded;
 
-      if (requiredRole && req.user.role !== requiredRole) {
-        return res.status(403).json({ message: 'Insufficient permissions' });
+      if (requiredPermission) {
+        const hasPermission = await AuthService.checkPermission(req.user.id, requiredPermission);
+        if (!hasPermission) {
+          return res.status(403).json({ message: 'Insufficient permissions' });
+        }
       }
 
       next();

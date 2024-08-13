@@ -7,9 +7,8 @@ const { PORT } = require('./config/config');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');// const inventoryRoutes = require('./routes/inventory.routes');
-// const orderRoutes = require('./routes/order.routes');
-// const serviceRoutes = require('./routes/service.routes');
-// const transactionRoutes = require('./routes/transaction.routes');
+const orderRoutes = require('./routes/orderRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 
 const app = express();
 if (!process.env.JWT_SECRET) {
@@ -24,9 +23,8 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/inventory', inventoryRoutes);
-// app.use('/api/orders', orderRoutes);
-// app.use('/api/services', serviceRoutes);
-// app.use('/api/transactions', transactionRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
