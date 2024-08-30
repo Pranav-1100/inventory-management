@@ -17,4 +17,4 @@ to use that just go to Postman, and import a new collection and then paste the p
 ![image](https://github.com/Pranav-1100/inventory-management/blob/main/Aug%2014%20Screenshot%20from%20Hack%20Club%20(3).png)
 ![image](https://github.com/Pranav-1100/inventory-management/blob/main/Aug%2014%20Screenshot%20from%20Hack%20Club%20(4).png)
 ![image](https://github.com/Pranav-1100/inventory-management/blob/main/Aug%2014%20Screenshot%20from%20Hack%20Club%20(5).png)
-![image](https://github.com/Pranav-1100/inventory-management/blob/main/Aug%2014%20Screenshot%20from%20Hack%20Club%20.png)
+![image](https://github.com/Pranav-1100/inventory-management/blob/main/Aug%2014%20Screenshot%20from%20Hack%20Club.png)
